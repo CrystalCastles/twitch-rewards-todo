@@ -10,6 +10,7 @@ import {
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { verifyUserToken } from "../../../lib/twitch";
+
 export default function UserPage(props) {
   const streamId = 1; //useLiveStreamId(props.user?.id);
   const [currentRedeemCount, redeems] = useTrackRedeems(
@@ -59,8 +60,8 @@ export default function UserPage(props) {
             </CurrentRedeem>
           </AnimatePresence>
           <p style={{fontStyle: "italic"}}>Up next...</p>
-          {nextRedeems.map((redeem) => (
-            <p>
+          {nextRedeems.map((redeem, idx) => (
+            <p key={idx}>
               {redeem.event_reward_title} from <span style={{fontWeight: "bold"}}>{redeem.event_user_login}</span>
               {redeem.event_user_input &&
                 `:  ${redeem.event_user_input}`}
