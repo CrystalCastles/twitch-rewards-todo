@@ -17,7 +17,7 @@ export async function createUserWebhooks(twitchUser) {
       twitchUser.id,
       streamOnline
     );
-
+      
     if (!onlineData) {
       return false;
     }

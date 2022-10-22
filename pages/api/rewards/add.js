@@ -11,7 +11,7 @@ export default async (req, res) => {
 
   const { t } = JSON.parse(req.cookies.__twtk);
   const token = t;
-
+  
   if (token == null) {
     return false;
   }
