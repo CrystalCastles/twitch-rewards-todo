@@ -47,26 +47,25 @@ export default function UserPage(props) {
   return (
     <Fragment>
       {currentRedeem && (
-        <List>
-          <AnimatePresence>
-            <CurrentRedeem>
-              <span>
-                {currentRedeem.event_reward_title} from{" "}
-                <span style={{fontWeight: "bold"}}>{currentRedeem.event_user_login}</span>
-                {currentRedeem.event_user_input &&
-                  `: ${currentRedeem.event_user_input}`}
-              </span>
-              <Button onClick={() => markRedeemComplete(currentRedeem.id)}>x</Button>
-            </CurrentRedeem>
-          </AnimatePresence>
+        <List className="list">
+          <CurrentRedeem onClick={() => markRedeemComplete(currentRedeem.id)}>
+            {currentRedeem.event_reward_title} from{" "}
+            <span style={{fontWeight: "bold"}}>{currentRedeem.event_user_login}</span>
+            {currentRedeem.event_user_input &&
+            `: ${currentRedeem.event_user_input}`}
+          </CurrentRedeem>
+          {/* <Button onClick={() => markRedeemComplete(currentRedeem.id)}>x</Button> */}
+
           <p style={{fontStyle: "italic"}}>Up next...</p>
-          {nextRedeems.map((redeem, idx) => (
-            <p key={idx}>
-              {redeem.event_reward_title} from <span style={{fontWeight: "bold"}}>{redeem.event_user_login}</span>
-              {redeem.event_user_input &&
-                `:  ${redeem.event_user_input}`}
-            </p>
-          ))}
+          <UpcomingList className="upcoming-list">
+            {nextRedeems.map((redeem, idx) => (
+              <p key={idx}>
+                {redeem.event_reward_title} from <span style={{fontWeight: "bold"}}>{redeem.event_user_login}</span>
+                {redeem.event_user_input &&
+                  `:  ${redeem.event_user_input}`}
+              </p>
+            ))}
+          </UpcomingList>
         </List>
       )}
       {/* {!currentRedeem && <p>All caught up</p>} */}
@@ -163,7 +162,7 @@ const Button = styled.button`
   border: transparent;
   font-size: 1em;
   bottom: .3rem;
-  cursor: pointer
+  cursor: pointer;
 `;
 
 const List = styled(motion.div)`
@@ -172,10 +171,42 @@ const List = styled(motion.div)`
   color: #af87f5;
   text-shadow: 0 0 10px #af87f5, 0 0 10px #5c14db;
   word-wrap: break-word;
+  white-space: normal;
+
+  > * {
+    padding-left: 10px;
+  }
   
   & p {
     margin: 0 auto;
   }
 `;
 
-const CurrentRedeem = styled(motion.div)``;
+const UpcomingList = styled(motion.div)`
+  height: 200px;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const CurrentRedeem = styled(motion.div)`
+  pointer-events: none;
+
+  &:after {
+    display: inline;
+    content: "x";
+    position: relative;
+    color: palevioletred;
+    text-shadow: 0 0 10px #af87f5, 0 0 10px #5c14db;
+    background-color: transparent;
+    border: transparent;
+    font-size: 1em;
+    bottom: .3rem;
+    left: .3rem;
+    pointer-events: all;
+    cursor: pointer;
+  }
+`;
