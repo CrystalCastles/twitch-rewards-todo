@@ -1,6 +1,13 @@
 import Router from "next/router";
 import * as Cookie from "cookie";
-import { Fragment, useContext, useEffect, useState } from "react";
+import {
+  Fragment,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTrackRedeems } from "../../../hooks/useTrackRedeems";
 import {
   getUserByTwitchLogin,
@@ -12,14 +19,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { verifyUserToken } from "../../../lib/twitch";
 
 export default function UserPage(props) {
+  const [height, setHeight] = useState(0);
+  const ref = useRef(null);
+
+  const getHeightSize = () => {
+    const newHeight = ref?.current?.clientHeight;
+
+    setHeight(newHeight);
+  };
+
   const streamId = 1; //useLiveStreamId(props.user?.id);
   const [currentRedeemCount, redeems] = useTrackRedeems(
     props.user?.id,
     streamId
   );
   const [updatedRedeem, setUpdatedRedeem] = useState(props.redeems?.events);
- 
+
   useEffect(() => {
+    window.addEventListener("resize", getHeightSize);
+
     if (props.user == null) {
       Router.replace("/");
     }
@@ -46,29 +64,36 @@ export default function UserPage(props) {
 
   return (
     <Fragment>
-      {currentRedeem && (
-        <List className="list">
-          <CurrentRedeem onClick={() => markRedeemComplete(currentRedeem.id)}>
-            {currentRedeem.event_reward_title} from{" "}
-            <span style={{fontWeight: "bold"}}>{currentRedeem.event_user_login}</span>
-            {currentRedeem.event_user_input &&
-            `: ${currentRedeem.event_user_input}`}
-          </CurrentRedeem>
-          {/* <Button onClick={() => markRedeemComplete(currentRedeem.id)}>x</Button> */}
-
-          <p style={{fontStyle: "italic"}}>Up next...</p>
-          <UpcomingList className="upcoming-list">
+      <List className="list">
+        {currentRedeem && (
+          <TopSection ref={ref}>
+            <CurrentRedeem onClick={() => markRedeemComplete(currentRedeem.id)}>
+              {currentRedeem.event_reward_title} from{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {currentRedeem.event_user_login}
+              </span>
+              {currentRedeem.event_user_input &&
+                `: ${currentRedeem.event_user_input}`}
+            </CurrentRedeem>
+            <p style={{ fontStyle: "italic" }}>Up next...</p>
+          </TopSection>
+        )}
+        {currentRedeem && (
+          <UpcomingList className="upcoming-list" height={height}>
             {nextRedeems.map((redeem, idx) => (
-              <p key={idx}>
-                {redeem.event_reward_title} from <span style={{fontWeight: "bold"}}>{redeem.event_user_login}</span>
-                {redeem.event_user_input &&
-                  `:  ${redeem.event_user_input}`}
-              </p>
+              <NextRedeem key={idx} onClick={() => markRedeemComplete(redeem.id)}>
+                {redeem.event_reward_title} from{" "}
+                <span style={{ fontWeight: "bold" }}>
+                  {redeem.event_user_login}
+                </span>
+                {redeem.event_user_input && `:  ${redeem.event_user_input}`}
+              </NextRedeem>
             ))}
+            {nextRedeems.length == 0 && <p>No redeems in queue</p>}
           </UpcomingList>
-        </List>
-      )}
-      {/* {!currentRedeem && <p>All caught up</p>} */}
+        )}
+        {!currentRedeem && <NoRedeems>No redeems in queue</NoRedeems>}
+      </List>
     </Fragment>
   );
 }
@@ -118,7 +143,7 @@ export async function getServerSideProps({ params, req, res }) {
     redirectHome();
     return { props: {} };
   }
-  
+
   if (params?.twitchId == null) {
     redirectHome();
 
@@ -130,7 +155,7 @@ export async function getServerSideProps({ params, req, res }) {
   try {
     const { t } = JSON.parse(__twtk);
     const login = await verifyUserToken(t);
-    
+
     if (params.twitchId !== login) {
       redirectHome();
       return { props: {} };
@@ -152,40 +177,29 @@ export async function getServerSideProps({ params, req, res }) {
       redeems,
     },
   };
-};
-
-const Button = styled.button`
-  position: relative;
-  color: palevioletred;
-  text-shadow: 0 0 10px #af87f5, 0 0 10px #5c14db;
-  background-color: transparent;
-  border: transparent;
-  font-size: 1em;
-  bottom: .3rem;
-  cursor: pointer;
-`;
+}
 
 const List = styled(motion.div)`
-  width: 800px;
-  font-size: 1.5rem;
+  font-size: 1rem;
   color: #af87f5;
   text-shadow: 0 0 10px #af87f5, 0 0 10px #5c14db;
   word-wrap: break-word;
   white-space: normal;
 
   > * {
-    padding-left: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
   }
-  
+
   & p {
-    margin: 0 auto;
+    margin: 0.2rem auto;
   }
 `;
 
 const UpcomingList = styled(motion.div)`
-  height: 200px;
   overflow-y: scroll;
   scroll-behavior: smooth;
+  max-height: ${(props) => `calc(100vh - ${props.height}px)`};
 
   ::-webkit-scrollbar {
     display: none;
@@ -204,9 +218,36 @@ const CurrentRedeem = styled(motion.div)`
     background-color: transparent;
     border: transparent;
     font-size: 1em;
-    bottom: .3rem;
-    left: .3rem;
+    bottom: 0.3rem;
+    left: 0.3rem;
     pointer-events: all;
     cursor: pointer;
   }
 `;
+
+const NextRedeem = styled(motion.div)`
+  &:active {
+    pointer-events: none;
+  }
+
+  &:hover {
+    &::after {
+    display: inline;
+    content: "x";
+    position: relative;
+    color: palevioletred;
+    text-shadow: 0 0 10px #af87f5, 0 0 10px #5c14db;
+    background-color: transparent;
+    border: transparent;
+    font-size: 1em;
+    bottom: 0.3rem;
+    left: 0.3rem;
+    pointer-events: all;
+    cursor: pointer;
+  }
+}
+`;
+
+const TopSection = styled(motion.div)``;
+
+const NoRedeems = styled(motion.div)``;
