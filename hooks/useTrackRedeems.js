@@ -30,9 +30,6 @@ export function useTrackRedeems(userId, streamId) {
   const { data } = useSWR(
     ["/api/user/redeems", userId, streamId],
     fetcher,
-    {
-      refreshInterval: ms("2s"),
-    }
   );
 
   return [data?.count ?? 0, data?.events];
