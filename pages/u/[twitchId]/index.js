@@ -231,6 +231,10 @@ const UpcomingList = styled(motion.div)`
   scroll-snap-type: y proximity;
   max-height: ${(props) => `calc(100vh - ${props.height}px)`};
 
+  .next-redeem:first-child {
+    scroll-snap-align: start;
+  }
+
   .next-redeem:last-child {
     scroll-snap-align: end;
   }
