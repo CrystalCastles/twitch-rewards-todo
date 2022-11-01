@@ -4,9 +4,11 @@ import { sha256 } from "js-sha256";
 import { handleWebhookEvent } from "../../../../lib/twitch-events";
 
 export default async (req, res) => {
+  console.log("1" + req);
   // N.B Enable CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "*");
+
   if (req.method === "OPTIONS") {
     return res.end();
   }
@@ -19,7 +21,7 @@ export default async (req, res) => {
   // We turned off body parsing with Next.js so we could verify the
   // request source was Twitch. So we need to absorb the body now.
   const body = await webhookPayloadParser(req);
-  
+  console.log("2" + req, body);
   try {
     verifyRequestFromTwitch(req, body);
   } catch {
@@ -78,7 +80,7 @@ export default async (req, res) => {
 
     return res.status(400).end();
   }
-
+  
   // Handle Twith revoking a webhook
   if (headers["twitch-eventsub-message-type"] === "revocation") {
     const {
@@ -108,6 +110,7 @@ export const config = {
  * stream and translate them into utf8 text.
  */
 function webhookPayloadParser(req) {
+  console.log("3" + req);
   return new Promise((resolve) => {
     let data = "";
 
@@ -123,6 +126,7 @@ function webhookPayloadParser(req) {
 
 // verify header Twitch-Eventsub-Message-Signature
 async function verifyRequestFromTwitch(req, body) {
+  console.log("4" + req, body);
   const twitchMessageId = req.headers["twitch-eventsub-message-id"];
   const twitchMessageTimestamp = req.headers[
     "twitch-eventsub-message-timestamp"

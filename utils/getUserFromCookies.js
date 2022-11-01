@@ -30,6 +30,7 @@ export async function getUserFromCookies(cookies) {
   if (!valid) {
     throw new Error("Unauthorized");
   }
-
+  
+  console.log(token, user);
   return user;
 }
