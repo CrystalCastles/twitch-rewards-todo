@@ -2,13 +2,18 @@ import Router from "next/router";
 import * as Cookie from "cookie";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useTrackRedeems } from "../../../hooks/useTrackRedeems";
-import { getAllUserRedeems, userRewardsUpdated } from "../../../lib/supabase";
+import { getAllUserRedeems, getUserConfig, userRewardsUpdated } from "../../../lib/supabase";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { verifyUserToken } from "../../../lib/twitch";
 import { GlobalHotKeys } from "react-hotkeys";
+import { useConfig } from "../../../hooks/useConfig";
 
 export default function UserPage(props) {
+  const [textColor, setTextColor] = useState(props.config?.text_color ? props.config?.text_color : '#af87f5');
+  const [glowColor, setGlowColor] = useState(props.config?.glow_color ? props.config?.glow_color : '#af87f5');
+  // const [clearCurrentBind, setClearCurrentBind] = useState(null);
+  // const [clearAllBind, setClearAllBind] = useState(null);
   const [height, setHeight] = useState(0);
   const ref = useRef(null);
 
@@ -18,6 +23,18 @@ export default function UserPage(props) {
   };
   const userId = props.user?.id;
   const streamId = 1; //useLiveStreamId(props.user?.id);
+
+  const { data: userConfig } = useConfig(props.user?.id, {
+    initialData: props.config
+  });
+
+  useEffect(() => {
+    if(userConfig) {
+      setTextColor(userConfig?.text_color ? userConfig?.text_color : '#af87f5');
+      setGlowColor(userConfig?.glow_color ? userConfig?.glow_color : '#af87f5');
+    }
+  }, [userConfig]);
+  
   const [currentRedeemCount, redeems] = useTrackRedeems(userId, streamId);
   const [updatedRedeem, setUpdatedRedeem] = useState(props.redeems?.events);
   const currentRedeem = updatedRedeem ? updatedRedeem[0] : null;
@@ -27,13 +44,15 @@ export default function UserPage(props) {
 
   useEffect(() => {
     userRewardsUpdated(["/api/user/redeems", userId, streamId]);
+    
+    if (props.user == null) {
+      Router.replace("/");
+    }
 
     setHeight(ref?.current?.clientHeight);
     window.addEventListener("resize", getHeightSize);
 
-    if (props.user == null) {
-      Router.replace("/");
-    }
+    return () => window.removeEventListener("resize", getHeightSize);
   }, []);
 
   useEffect(() => {
@@ -54,34 +73,40 @@ export default function UserPage(props) {
         }
       });
     }
+    
+    // Get the height of the top section after X seconds. Bad implementation, change later when I figure it out.
+    setTimeout(() => {
+      setHeight(ref?.current?.clientHeight);
+    }, 1000);
   };
 
-  // const clearRedeemsList = () => {
-  //   fetch("/api/redeems/update", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ userId: props.user.id, redeemId: "all" }),
-  //   }).then(async (response) => {
-  //     if (response.ok) {
-  //       const r = await response.json();
-  //     }
-  //   });
-  // };
+  const clearRedeemsList = () => {
+    fetch("/api/redeems/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: props.user.id, redeemId: "all" }),
+    }).then(async (response) => {
+      if (response.ok) {
+        setUpdatedRedeem([]);
+        const r = await response.json();
+      }
+    });
+  };
 
   const keyMap = {
-    // CLEAR_ALL: "del",
+    CLEAR_ALL: "del",
     CLEAR_CURRENT: "backspace",
   };
 
   const handlers = {
-    // CLEAR_ALL: () => clearRedeemsList(),
+    CLEAR_ALL: () => clearRedeemsList(),
     CLEAR_CURRENT: () => markRedeemComplete(currentRedeem ? currentRedeem.id : null),
   };
 
   return (
     <GlobalHotKeys keyMap={keyMap} handlers={handlers} allowChanges={true}>
       <AnimatePresence>
-        <List className="list">
+        <List className="list" textcolor={textColor} glowcolor={glowColor}>
           {currentRedeem && (
             <TopSection ref={ref}>
               <CurrentRedeem
@@ -94,11 +119,11 @@ export default function UserPage(props) {
                 {currentRedeem.event_user_input &&
                   `: ${currentRedeem.event_user_input}`}
               </CurrentRedeem>
-              <p style={{ fontStyle: "italic" }}>Up next...</p>
+              <p style={{ fontStyle: "italic", marginBottom: "0" }}>Up next...</p>
             </TopSection>
           )}
           {currentRedeem && (
-            <UpcomingList className="upcoming-list" height={height}>
+            <UpcomingList className="upcoming-list" height={height} textcolor={textColor} glowcolor={glowColor}>
               {nextRedeems.map((redeem, idx) => (
                 <NextRedeem
                   key={idx}
@@ -124,38 +149,6 @@ export default function UserPage(props) {
     </GlobalHotKeys>
   );
 }
-
-// export async function getServerSideProps(context) {
-//   const { twitchId } = context.params;
-
-//   const redirectHome = () => {
-//     context.res.statusCode = 302;
-//     context.res.setHeader("Location", "/");
-//   };
-
-//   if (twitchId == null) {
-//     redirectHome();
-
-//     return { props: {} };
-//   }
-
-//   const user = await getUserByTwitchLogin(twitchId);
-
-//   if (user == null || user.login != twitchId) {
-//     redirectHome();
-
-//     return { props: {} };
-//   }
-
-//   const streamId = 1; // await getCurrentLiveStreamForUserId(twitchId);
-//   const redeems = await getAllUserRedeems(user.id, streamId);
-//   return {
-//     props: {
-//       user,
-//       redeems,
-//     },
-//   };
-// }
 
 export async function getServerSideProps({ params, req, res }) {
   const {
@@ -198,30 +191,30 @@ export async function getServerSideProps({ params, req, res }) {
 
   const streamId = 1; // await getCurrentLiveStreamForUserId(twitchId);
   const redeems = await getAllUserRedeems(user.id, streamId);
+  const config = await getUserConfig(user);
 
   return {
     props: {
       user,
       redeems,
+      config
     },
   };
 }
 
 const List = styled(motion.div)`
   font-size: 1.5rem;
-  color: #af87f5;
-  text-shadow: 0 0 10px #af87f5, 0 0 10px #5c14db;
+  color: ${(props) => `${props.textcolor}`};
+  text-shadow: ${(props) => `0 0 10px ${props.glowcolor}, 0 0 10px ${props.glowcolor}`}; 
   word-wrap: break-word;
   white-space: normal;
 
   > * {
-    padding-left: 5px;
-    padding-right: 5px;
-    padding-bottom: 5px;
+    padding: 5px;
   }
 
   & p {
-    margin: 0.2rem auto;
+    margin: .3rem auto;
   }
 `;
 
@@ -232,17 +225,19 @@ const UpcomingList = styled(motion.div)`
   max-height: ${(props) => `calc(100vh - ${props.height}px)`};
 
   .next-redeem:first-child {
+    margin-top: 0;
     scroll-snap-align: start;
   }
 
   .next-redeem:last-child {
+    margin-bottom: 0;
     scroll-snap-align: end;
   }
 
   /* ===== Scrollbar CSS ===== */
   /* Firefox */
   scrollbar-width: auto;
-  scrollbar-color: #af87f5 #000000;
+  scrollbar-color: ${(props) => `${props.textcolor} #000000`};
 
   /* Chrome, Edge, and Safari */
   ::-webkit-scrollbar {
@@ -254,13 +249,13 @@ const UpcomingList = styled(motion.div)`
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: #af87f5;
+    background-color: ${(props) => `${props.textcolor}`};
     border-radius: 5px;
     border: 2px none #ffffff;
   }
 `;
 
-const CurrentRedeem = styled(motion.div)`
+const CurrentRedeem = styled(motion.p)`
   pointer-events: none;
 
   &:after {
@@ -268,7 +263,7 @@ const CurrentRedeem = styled(motion.div)`
     content: "x";
     position: relative;
     color: palevioletred;
-    text-shadow: 0 0 10px #af87f5, 0 0 10px #5c14db;
+    text-shadow: ${(props) => `0 0 10px ${props.glowcolor}, 0 0 10px ${props.glowcolor}`}; 
     background-color: transparent;
     border: transparent;
     font-size: 1em;
@@ -279,7 +274,7 @@ const CurrentRedeem = styled(motion.div)`
   }
 `;
 
-const NextRedeem = styled(motion.div)`
+const NextRedeem = styled(motion.p)`
   &:active {
     pointer-events: none;
   }
@@ -290,7 +285,7 @@ const NextRedeem = styled(motion.div)`
       content: "x";
       position: relative;
       color: palevioletred;
-      text-shadow: 0 0 10px #af87f5, 0 0 10px #5c14db;
+      text-shadow: ${(props) => `0 0 10px ${props.glowcolor}, 0 0 10px ${props.glowcolor}`}; 
       background-color: transparent;
       border: transparent;
       font-size: 1em;

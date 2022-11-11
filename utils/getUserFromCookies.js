@@ -31,6 +31,5 @@ export async function getUserFromCookies(cookies) {
     throw new Error("Unauthorized");
   }
   
-  console.log(token, user);
   return user;
 }

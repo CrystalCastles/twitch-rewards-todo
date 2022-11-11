@@ -26,10 +26,13 @@ async function fetcher(route, userId, streamId) {
   return data;
 }
 
-export function useTrackRedeems(userId, streamId) {
+export function useTrackRedeems(userId, streamId, options) {
   const { data } = useSWR(
     ["/api/user/redeems", userId, streamId],
     fetcher,
+    {
+      initialData: options?.initialData,
+    }
   );
 
   return [data?.count ?? 0, data?.events];
