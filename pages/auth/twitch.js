@@ -9,6 +9,7 @@ export default function TwitchOAuthCallback() {
   useEffect(() => {
     if (typeof window !== undefined && code != null) {
       const state = localStorage.getItem("__twRw");
+      const from = localStorage.getItem("__from");
       
       if (state != state) {
         // you cannot auth.
@@ -20,7 +21,7 @@ export default function TwitchOAuthCallback() {
           const {error: parseError, data: user} = await until(() => response.json())
           
           if(parseError == null && user != null) {
-            router.replace(`/u/${user.login}`);
+            router.replace(`/u/${user.login}/` + (from ? from : ''));
             return;
           }
 

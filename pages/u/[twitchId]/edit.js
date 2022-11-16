@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { recordKeyCombination } from "react-hotkeys";
 import { useConfig } from "../../../hooks/useConfig";
 import { TailSpin } from "react-loader-spinner";
+import { generateApiKey } from "generate-api-key";
 
 export default function EditRewards(props) {
   const router = useRouter();
@@ -22,6 +23,10 @@ export default function EditRewards(props) {
   const [glowColor, setGlowColor] = useState(
     props.config?.glow_color ? props.config?.glow_color : "#af87f5"
   );
+  const [kofiKey, setKofiKey] = useState(
+    props.config?.kofi_key ? props.config?.kofi_key : null
+  );
+
   const [loadingId, setLoadingId] = useState({});
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
@@ -42,6 +47,7 @@ export default function EditRewards(props) {
     if (userConfig) {
       setTextColor(userConfig?.text_color ? userConfig?.text_color : "#af87f5");
       setGlowColor(userConfig?.glow_color ? userConfig?.glow_color : "#af87f5");
+      setKofiKey(userConfig?.kofi_key ? userConfig?.kofi_key : null);
     }
   }, [userConfig]);
 
@@ -169,7 +175,7 @@ export default function EditRewards(props) {
     });
   };
 
-  const updateUserConfig = (e) => {
+  const updateUserColors = (e) => {
     const { id } = e.target;
     setLoadingId((ids) => ({
       ...ids,
@@ -189,6 +195,44 @@ export default function EditRewards(props) {
         setTimeout(() => {
           setSuccess(false);
         }, 3000);
+      } else {
+        setError(true);
+        setTimeout(() => {
+          setError(false);
+        }, 3000);
+      }
+      setLoadingId((ids) => ({
+        ...ids,
+        [id]: false,
+      }));
+    });
+  };
+
+  const updateUserKofiKey = (e) => {
+    const { id } = e.target;
+    const KOFI_KEY = generateApiKey({
+      method: "string",
+      length: 32,
+      pool: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+    });
+    setLoadingId((ids) => ({
+      ...ids,
+      [id]: true,
+    }));
+    fetch("/api/user/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: props.user.id,
+        kofiKey: KOFI_KEY,
+      }),
+    }).then(async (response) => {
+      if (response.ok) {
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+        }, 3000);
+        setKofiKey(KOFI_KEY);
       } else {
         setError(true);
         setTimeout(() => {
@@ -222,6 +266,9 @@ export default function EditRewards(props) {
       visible={true}
     />
   );
+
+  const KOFI_URL =
+    "https://8ee5-45-46-163-235.ngrok.io/api/webhooks/callbacks/kofi?id=";
 
   return (
     <Fragment>
@@ -339,10 +386,55 @@ export default function EditRewards(props) {
               </PreviewTextBlack>
               {/* <p>Clear Top Redeem Keybind</p>
 
-            <p>Clear All Redeems Keybind</p> */}
-              <Button onClick={updateUserConfig} id={4}>
-                {loadingId[4] ? spinner : "Submit"}
+              <p>Clear All Redeems Keybind</p> */}
+
+              <Button onClick={updateUserColors} id={4}>
+                {loadingId[4] ? spinner : "Submit Colors"}
               </Button>
+
+              <p style={{ fontWeight: "bold" }}>Kofi Configuration:</p>
+              <KofiSection>
+                {kofiKey ? (
+                  <Fragment>
+                    <KofiKey>
+                      Your Kofi Webhook URL is:{" "}
+                      <span>
+                        {KOFI_URL}
+                        {kofiKey}
+                      </span>
+                    </KofiKey>
+                    <Button
+                      style={{ display: "inline" }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${KOFI_URL}${kofiKey}`);
+                      }}
+                      id={5}
+                    >
+                      Copy to clipboard
+                    </Button>
+                  </Fragment>
+                ) : (
+                  <p>No URL has been generated.</p>
+                )}
+                {kofiKey && (
+                  <p>
+                    Do not share this URL! Enter the URL on this page:{" "}
+                    <a href="https://ko-fi.com/manage/webhooks">
+                      https://ko-fi.com/manage/webhooks
+                    </a>{" "}
+                    and read about the type of data that will be sent to this
+                    app. <br /><br />
+
+                    This app will not be storing any private
+                    donations or emails. By using this Kofi Webhook URL and this
+                    app, you acknowledge that you understand the type of data
+                    that will be sent and/or stored on this app.
+                  </p>
+                )}
+                <Button onClick={updateUserKofiKey} id={5}>
+                  {loadingId[5] ? spinner : "Generate Kofi Webhook URL"}
+                </Button>
+              </KofiSection>
             </UserConfig>
           </Fragment>
         )}
@@ -357,7 +449,7 @@ export async function getServerSideProps({ params, req, res }) {
   } = req;
   const redirectHome = () => {
     res.statusCode = 302;
-    res.setHeader("Location", "/");
+    res.setHeader("Location", "/?from=edit");
   };
 
   if (cookie == null) {
@@ -400,6 +492,17 @@ export async function getServerSideProps({ params, req, res }) {
     },
   };
 }
+
+const KofiSection = styled(motion.div)`
+  max-width: 1400px;
+`;
+
+const KofiKey = styled(motion.p)`
+  display: inline;
+  & span {
+    font-weight: bold;
+  }
+`;
 
 const EditPage = styled(motion.div)`
   overflow: auto;

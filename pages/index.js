@@ -3,17 +3,23 @@ import { v4 as uuidv4 } from "uuid";
 import styled from "styled-components";
 
 import * as Twitch from "../lib/twitch";
+import { useRouter } from "next/router";
 
 export default function Home(props) {
+  const router = useRouter();
+  const { from } = router.query;
+
+  const authUrl = props.twitchAuthUrl;
+
   useEffect(() => {
     if (typeof window !== undefined) {
       localStorage.setItem("__twRw", props.state);
+      from ? localStorage.setItem("__from", from) : localStorage.removeItem("__from");
     }
   }, [props.state]);
-
   return (
     <LoginPage>
-      <Button href={props.twitchAuthUrl}>
+      <Button href={authUrl}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="18"
@@ -44,7 +50,7 @@ export async function getServerSideProps() {
 
 const LoginPage = styled.div`
   margin: 1rem;
-  overflow: auto;
+  overflow: hidden;
 `
 
 const Button = styled.a`

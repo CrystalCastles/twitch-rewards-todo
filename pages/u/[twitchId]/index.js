@@ -1,6 +1,6 @@
 import Router from "next/router";
 import * as Cookie from "cookie";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTrackRedeems } from "../../../hooks/useTrackRedeems";
 import { getAllUserRedeems, getUserConfig, userRewardsUpdated } from "../../../lib/supabase";
 import styled from "styled-components";
@@ -110,11 +110,12 @@ export default function UserPage(props) {
           {currentRedeem && (
             <TopSection ref={ref}>
               <CurrentRedeem
+                className={currentRedeem.is_donation && "kofi-donation"}
                 onClick={() => markRedeemComplete(currentRedeem.id)}
               >
-                {currentRedeem.event_reward_title} from{" "}
+                {currentRedeem.is_donation && currentRedeem.donation_amount} {currentRedeem.event_reward_title} from{" "}
                 <span style={{ fontWeight: "bold" }}>
-                  {currentRedeem.event_user_login}
+                  {currentRedeem.event_user_name}
                 </span>
                 {currentRedeem.event_user_input &&
                   `: ${currentRedeem.event_user_input}`}
@@ -127,15 +128,15 @@ export default function UserPage(props) {
               {nextRedeems.map((redeem, idx) => (
                 <NextRedeem
                   key={idx}
-                  className="next-redeem"
+                  className={`${redeem.is_donation ? "kofi-donation" : "points-redeem"} next-redeem`}
                   onClick={() => markRedeemComplete(redeem.id)}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  {redeem.event_reward_title} from{" "}
+                  {redeem.is_donation && redeem.donation_amount} {redeem.event_reward_title} from{" "}
                   <span style={{ fontWeight: "bold" }}>
-                    {redeem.event_user_login}
+                    {redeem.event_user_name}
                   </span>
                   {redeem.event_user_input && `:  ${redeem.event_user_input}`}
                 </NextRedeem>
@@ -216,10 +217,29 @@ const List = styled(motion.div)`
   & p {
     margin: .3rem auto;
   }
+
+  & .kofi-donation {
+	  animation: pulse 2s infinite;
+    border-radius: .3rem;
+    @keyframes pulse {
+      0% {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+    
+      70% {
+        background-color: rgba(255, 255, 255, 0);
+      }
+    
+      100% {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+    }
+  }
 `;
 
 const UpcomingList = styled(motion.div)`
   overflow-y: scroll;
+  overflow-x: hidden;
   overscroll-behavior-y: contain;
   scroll-snap-type: y proximity;
   max-height: ${(props) => `calc(100vh - ${props.height}px)`};

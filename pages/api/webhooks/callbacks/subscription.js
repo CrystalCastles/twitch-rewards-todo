@@ -4,7 +4,6 @@ import { sha256 } from "js-sha256";
 import { handleWebhookEvent } from "../../../../lib/twitch-events";
 
 export default async (req, res) => {
-  console.log("1" + req);
   // N.B Enable CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "*");
