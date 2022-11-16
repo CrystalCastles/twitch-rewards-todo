@@ -268,7 +268,7 @@ export default function EditRewards(props) {
   );
 
   const KOFI_URL =
-    "https://8ee5-45-46-163-235.ngrok.io/api/webhooks/callbacks/kofi?id=";
+    "https://twitch-rewards-todo-crystalcastles.vercel.app/api/webhooks/callbacks/kofi?id=";
 
   return (
     <Fragment>
