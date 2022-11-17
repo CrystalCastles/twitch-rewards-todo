@@ -87,11 +87,14 @@ export default function UserPage(props) {
         currentRedeems ? currentRedeems[currentRedeems.length - 1].id : null
       ),
   };
-
+  console.log(props.user)
   return (
     <GlobalHotKeys keyMap={keyMap} handlers={handlers} allowChanges={true}>
       <AnimatePresence>
-        <Header ref={ref}>Twitch Redeems & Kofi Donations Feed</Header>
+        <Header ref={ref}>
+          <span class="header-title">Twitch Redeems & Kofi Donations Feed</span>
+          <span class="profile"><img src={props.user?.imageUrl}/> {props.user?.login}</span>
+        </Header>
         <List height={height}>
           {currentRedeems
             ?.slice(0)
@@ -107,7 +110,7 @@ export default function UserPage(props) {
                 exit={{ opacity: 0 }}
               >
                 <Redeem onClick={() => markRedeemComplete(redeem.id)}>
-                  <TimeSince>{moment(redeem.created_at).fromNow()}</TimeSince>
+                  <TimeSince>{moment(redeem.created_at).fromNow() == "in a few seconds" ? "a few seconds ago" : moment(redeem.created_at).fromNow()}</TimeSince>
                   <CompleteButton>x</CompleteButton>
                   <Title>
                     <span style={{ fontWeight: "bold" }}>
@@ -249,6 +252,26 @@ const Header = styled(motion.div)`
   color: #8674a6;
   font-size: .8rem;
   padding: 0.5rem;
+  display: flex;
+  flex-direction: row;
+
+  & .header-title {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  & .profile {
+    vertical-align: middle;
+    margin: 0 0 0 auto;
+  }
+
+  & img {
+    margin-right: .1rem;
+    border-radius: 50%;
+    border: 2px solid #8674a6;
+    vertical-align: middle;
+    width: 30px;
+  }
 `;
 
 const Message = styled(motion.div)`
@@ -266,7 +289,7 @@ const TimeSince = styled(motion.div)`
 const CompleteButton = styled(motion.div)`
   display: inline;
   position: relative;
-  float:right;
+  float: right;
   right: 0;
   color: #8674a6;
   font-size: 1em;
