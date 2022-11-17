@@ -15,7 +15,7 @@ export default async (req, res) => {
 
   let data = JSON.parse(req.body.data);
 
-  if(data.verification_token !== process.env.KOFI_TOKEN) {
+  if(!data.verification_token) {
     return res.status(400).end();
   }
   
