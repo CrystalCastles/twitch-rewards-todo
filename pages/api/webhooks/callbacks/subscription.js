@@ -30,6 +30,9 @@ export default async (req, res) => {
   const messageId = headers["twitch-eventsub-message-id"];
   const timestamp = headers["twitch-eventsub-message-timestamp"];
 
+  // Test webhook log storing next push
+  console.log(messageId, timestamp);
+
   // Store the record in the DB to make sure we avoid dups.
   const alreadySeen = !(await Supabase.trackRecievedTwitchWebhook(
     messageId,
