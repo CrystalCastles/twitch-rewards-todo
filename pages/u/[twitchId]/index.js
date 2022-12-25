@@ -110,7 +110,7 @@ export default function UserPage(props) {
           {currentRedeem && (
             <TopSection ref={ref}>
               <CurrentRedeem
-                className={currentRedeem.is_donation && "kofi-donation"}
+                className={(currentRedeem.is_donation || currentRedeem.event_reward_title.toLowerCase() == "trigger word redeem") && "premium"}
                 onClick={() => markRedeemComplete(currentRedeem.id)}
               >
                 {currentRedeem.is_donation && currentRedeem.donation_amount} {currentRedeem.event_reward_title} from{" "}
@@ -128,7 +128,7 @@ export default function UserPage(props) {
               {nextRedeems.map((redeem, idx) => (
                 <NextRedeem
                   key={idx}
-                  className={`${redeem.is_donation ? "kofi-donation" : "points-redeem"} next-redeem`}
+                  className={`${(redeem.is_donation || redeem.event_reward_title.toLowerCase() == "trigger word redeem") ? "premium" : "points-redeem"} next-redeem`}
                   onClick={() => markRedeemComplete(redeem.id)}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -218,12 +218,13 @@ const List = styled(motion.div)`
     margin: .3rem auto;
   }
 
-  & .kofi-donation {
+  & .premium {
 	  animation: pulse 2s infinite;
+    padding: .3rem;
     border-radius: .3rem;
     @keyframes pulse {
       0% {
-        background-color: rgba(255, 255, 255, 0.15);
+        background-color: rgba(255, 255, 255, 0.2);
       }
     
       70% {
@@ -231,7 +232,7 @@ const List = styled(motion.div)`
       }
     
       100% {
-        background-color: rgba(255, 255, 255, 0.15);
+        background-color: rgba(255, 255, 255, 0.2);
       }
     }
   }

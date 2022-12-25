@@ -87,7 +87,7 @@ export default function UserPage(props) {
         currentRedeems ? currentRedeems[currentRedeems.length - 1].id : null
       ),
   };
-  console.log(props.user)
+  
   return (
     <GlobalHotKeys keyMap={keyMap} handlers={handlers} allowChanges={true}>
       <AnimatePresence>
@@ -102,9 +102,7 @@ export default function UserPage(props) {
             .map((redeem) => (
               <RedeemWrapper
                 key={redeem.id}
-                className={`${
-                  redeem.is_donation ? "kofi-donation" : "points-redeem"
-                }`}
+                className={`${(redeem.is_donation || redeem.event_reward_title.toLowerCase() == "trigger word redeem") ? "premium" : "points-redeem"} next-redeem`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -228,7 +226,7 @@ const RedeemWrapper = styled(motion.div)`
     border-top: none;
   }
 
-  &.kofi-donation {
+  &.premium {
     animation: pulse 2s infinite;
     background-color: white;
     @keyframes pulse {
